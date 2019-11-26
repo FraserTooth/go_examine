@@ -1,12 +1,11 @@
-package main
+package helloworld
 
 import "fmt"
 
 //return hello greeting
-func hello(user string) string {
+func Hello(user string) string {
 	if len(user) == 0 {
 		return "Hello There!"
-	} else {
-		return fmt.Sprintf("Hello %v!", user)
 	}
+	return fmt.Sprintf("Hello %v!", user)
 }
