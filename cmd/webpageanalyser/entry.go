@@ -7,13 +7,25 @@ import (
 	"net/http"
 	"time"
 	"fmt"
+	"github.com/PuerkitoBio/goquery"
 )
+
+//problemWords := 
 
 type Website struct {
 	Url string `json:"url"`
 }
 
-func grabWebpage(url string){
+type Paragraph struct {
+	text string
+}
+
+// This will get called for each Paragraph
+func processElement(index int, element *goquery.Selection) {
+        fmt.Println(element.Text())
+}
+
+func grabWebpage(url string) (numberOfParagraphs int){
 	grabWebpageClient := http.Client{
 		Timeout: time.Second * 3,
 	}
@@ -30,18 +42,26 @@ func grabWebpage(url string){
 		return
 	}
 
-	dataInBytes, err3 := ioutil.ReadAll(response.Body)
-	if err3 != nil {
-		log.Fatal(err3)
-	}
+	defer response.Body.Close()
 
-	// Get the response body as a string
-	pageContent := string(dataInBytes)
+    // Create a goquery document from the HTTP response
+    document, err := goquery.NewDocumentFromReader(response.Body)
+    if err != nil {
+        log.Fatal("Error loading HTTP response body. ", err)
+	}
 	
-	//Print Body
-	fmt.Println(pageContent)
+	paragraphs := make([]string,0)
+
+    // Find all paragraphs, process with function
+    document.Find("p").Each(func(index int, element *goquery.Selection) {
+		paragraphs = append(paragraphs, element.Text())
+	  })
+	
+	numberOfParagraphs = len(paragraphs)
+	return
 }
 
+//This will handle the webpage sent
 func AnalyseWebpage(w http.ResponseWriter, r *http.Request) {
 	// Read body
 	b, err := ioutil.ReadAll(r.Body)
@@ -52,21 +72,25 @@ func AnalyseWebpage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Unmarshal
-	var msg Website
-	err = json.Unmarshal(b, &msg)
+	var requestMessage Website
+	err = json.Unmarshal(b, &requestMessage)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
 	//Print Locally
-	fmt.Printf("Website: %v \n", msg)
+	fmt.Printf("Website: %v \n", requestMessage)
 
-	grabWebpage(msg.Url)
+	//Send to Webpage Handling Function
+	numberOfParagraphs := grabWebpage(requestMessage.Url)
 	
-
+	//Create Response Map
+	res := make(map[string]interface{})
+	res["numberOfParagraphs"] = numberOfParagraphs
+	res["url"] = requestMessage.Url
+	
 	//Package Up Response
-	res := msg
 	output, err := json.Marshal(res)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
