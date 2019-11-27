@@ -26,7 +26,7 @@ func processElement(index int, element *goquery.Selection) {
         fmt.Println(element.Text())
 }
 
-func grabWebpage(url string) (numberOfParagraphs int, indexesOfProblemParagraphs []int){
+func grabWebpage(url string) (numberOfParagraphs int, indexesOfProblemParagraphs []){
 	grabWebpageClient := http.Client{
 		Timeout: time.Second * 3,
 	}
