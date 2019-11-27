@@ -8,6 +8,7 @@ import (
 	"time"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"strings"
 )
 
 //problemWords := 
@@ -25,7 +26,7 @@ func processElement(index int, element *goquery.Selection) {
         fmt.Println(element.Text())
 }
 
-func grabWebpage(url string) (numberOfParagraphs int){
+func grabWebpage(url string) (numberOfParagraphs int, indexesOfProblemParagraphs []int){
 	grabWebpageClient := http.Client{
 		Timeout: time.Second * 3,
 	}
@@ -50,14 +51,20 @@ func grabWebpage(url string) (numberOfParagraphs int){
         log.Fatal("Error loading HTTP response body. ", err)
 	}
 	
-	paragraphs := make([]string,0)
+	indexesOfProblemParagraphs = make([]int,0)
+	numberOfParagraphs = 0
 
     // Find all paragraphs, process with function
     document.Find("p").Each(func(index int, element *goquery.Selection) {
-		paragraphs = append(paragraphs, element.Text())
+		numberOfParagraphs++
+		text := element.Text()
+		if strings.Contains(text, "think"){
+			indexesOfProblemParagraphs = append(indexesOfProblemParagraphs, index)
+		}
 	  })
-	
-	numberOfParagraphs = len(paragraphs)
+
+	fmt.Println(indexesOfProblemParagraphs)
+
 	return
 }
 
@@ -83,12 +90,13 @@ func AnalyseWebpage(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Website: %v \n", requestMessage)
 
 	//Send to Webpage Handling Function
-	numberOfParagraphs := grabWebpage(requestMessage.Url)
+	numberOfParagraphs, indexesOfProblemParagraphs := grabWebpage(requestMessage.Url)
 	
 	//Create Response Map
 	res := make(map[string]interface{})
 	res["numberOfParagraphs"] = numberOfParagraphs
 	res["url"] = requestMessage.Url
+	res["indexesOfProblemParagraphs"] = indexesOfProblemParagraphs	
 	
 	//Package Up Response
 	output, err := json.Marshal(res)
