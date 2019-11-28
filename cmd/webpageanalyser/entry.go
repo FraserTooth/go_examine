@@ -106,6 +106,7 @@ func AnalyseWebpage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Send
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("content-type", "application/json")
 	w.Write(output)
 }
