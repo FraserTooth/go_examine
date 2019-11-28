@@ -11,7 +11,6 @@ import (
 	"strings"
 )
 
-//problemWords := 
 
 type Website struct {
 	Url string `json:"url"`
@@ -21,14 +20,26 @@ type Paragraph struct {
 	text string
 }
 
+type ProblemWords struct {
+	Word string `json:"word"`
+	Locations []int `json:"locations"`
+	Message string `json:"message"`
+} 
+
+type Response struct {
+	NumberOfParagraphs int `json:"numberOfParagraphs"`
+	Url string `json:"url"`
+	Words []ProblemWords `json:"problemWords"`
+}
+
 // This will get called for each Paragraph
 func processElement(index int, element *goquery.Selection) {
         fmt.Println(element.Text())
 }
 
-func grabWebpage(url string) (numberOfParagraphs int, indexesOfProblemParagraphs []int){
+func grabWebpage(url string) (numberOfParagraphs int, problemWords []ProblemWords){
 	grabWebpageClient := http.Client{
-		Timeout: time.Second * 3,
+		Timeout: time.Second * 5,
 	}
 
 	request, err := http.NewRequest(http.MethodGet, url, nil)
@@ -50,20 +61,26 @@ func grabWebpage(url string) (numberOfParagraphs int, indexesOfProblemParagraphs
     if err != nil {
         log.Fatal("Error loading HTTP response body. ", err)
 	}
-	
-	indexesOfProblemParagraphs = make([]int,0)
+
 	numberOfParagraphs = 0
 
+	//Dictionary
+	problemWords = make([]ProblemWords,0)
+	
+	indexes := make([]int,0)
+	
     // Find all paragraphs, process with function
     document.Find("p").Each(func(index int, element *goquery.Selection) {
 		numberOfParagraphs++
 		text := element.Text()
 		if strings.Contains(text, "think"){
-			indexesOfProblemParagraphs = append(indexesOfProblemParagraphs, index)
+			indexes = append(indexes, index)
 		}
-	  })
+	})
+	
+	object := ProblemWords{"think",indexes,"'Think' implies that this is an opinion, can you be sure this is a factual article?"}
 
-	fmt.Println(indexesOfProblemParagraphs)
+	problemWords = append(problemWords,object) 
 
 	return
 }
@@ -90,13 +107,22 @@ func AnalyseWebpage(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Website: %v \n", requestMessage)
 
 	//Send to Webpage Handling Function
-	numberOfParagraphs, indexesOfProblemParagraphs := grabWebpage(requestMessage.Url)
+	numberOfParagraphs, problemWords := grabWebpage(requestMessage.Url)
 	
+
+	fmt.Printf("Words: \n %v \n", problemWords)
 	//Create Response Map
-	res := make(map[string]interface{})
-	res["numberOfParagraphs"] = numberOfParagraphs
-	res["url"] = requestMessage.Url
-	res["indexesOfProblemParagraphs"] = indexesOfProblemParagraphs	
+	res := Response{
+		numberOfParagraphs,
+		requestMessage.Url,
+		problemWords,
+	}
+
+	fmt.Printf("Res: \n %v \n", res)
+	// res["numberOfParagraphs"] = 
+	// res["url"] = requestMessage.Url
+
+	// res["problemWords"] = problemWords	
 	
 	//Package Up Response
 	output, err := json.Marshal(res)
