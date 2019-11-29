@@ -65,22 +65,48 @@ func grabWebpage(url string) (numberOfParagraphs int, problemWords []ProblemWord
 	numberOfParagraphs = 0
 
 	//Dictionary
+	dictionary := []struct{
+		word string
+		message string
+	}{
+		{"think", "'Think' implies that this is an opinion, can you be sure this is a factual article?"},
+		{"communist", "This term is often used in clickbait articles, is this article trying to rile you up or scare you?"},
+		{"cancer", "This term is often used in clickbait articles, is this article trying to rile you up or scare you?"},
+		{"immigrant", "This term is often used in clickbait articles, is this article trying to rile you up or scare you?"},
+		{"sex", "This term is often used in clickbait articles, is this article trying to rile you up or scare you?"},
+		{"studies show", "What studies? Does this article give a source?"},
+		{"fact", "Facts are sometimes claimed when there are none. Is there a source?"},
+		{"addicted", "This is a very charged term. Is the article fair and unbaised?"},
+		{"lied", "This is a very charged term. Is the article fair and unbaised?"},
+		{"liar", "This is a very charged term. Is the article fair and unbaised?"},
+		{"millenial", "This term is often used in clickbait articles, is this article trying to rile you up or scare you?"},
+	}
+
+	//Response Prep
 	problemWords = make([]ProblemWords,0)
 	
-	indexes := make([]int,0)
-	
-    // Find all paragraphs, process with function
-    document.Find("p").Each(func(index int, element *goquery.Selection) {
-		numberOfParagraphs++
-		text := element.Text()
-		if strings.Contains(text, "think"){
-			indexes = append(indexes, index)
-		}
-	})
-	
-	object := ProblemWords{"think",indexes,"'Think' implies that this is an opinion, can you be sure this is a factual article?"}
+	//Loop Through Dictionary
 
-	problemWords = append(problemWords,object) 
+	for _, dictionaryItem := range dictionary {
+		indexes := make([]int,0)
+		
+		// Find all paragraphs, process with function
+		document.Find("p").Each(func(index int, element *goquery.Selection) {
+			numberOfParagraphs++
+			text := element.Text()
+			if strings.Contains(text, dictionaryItem.word){
+				indexes = append(indexes, index)
+			}
+		})
+		
+		if len(indexes) > 0 {
+			object := ProblemWords{dictionaryItem.word,indexes,dictionaryItem.message}
+		
+			problemWords = append(problemWords,object) 
+		}
+
+	}
+
 
 	return
 }
