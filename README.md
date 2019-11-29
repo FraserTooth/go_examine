@@ -15,6 +15,13 @@ It will check the content of each webpage against a list of predefined "problem 
 
 The Browser Extension part of this project can be found at [go_examine_browser](https://github.com/FraserTooth/go_examine_browser).
 
+## Use
+This is designed to be deployed on [Google Cloud Functions](https://cloud.google.com/functions/docs/concepts/go-runtime) hence it does not use any external API libraries.
+
+The [goquery](https://github.com/PuerkitoBio/goquery) library is used to parse the webpages a little easier.
+
+The API is publicly available at https://us-central1-graphite-bliss-260202.cloudfunctions.net/AnalyseWebpage
+
 ## API Interaction
 
 Send the following in a POST request to the API:
