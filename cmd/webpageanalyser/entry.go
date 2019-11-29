@@ -75,11 +75,15 @@ func grabWebpage(url string) (numberOfParagraphs int, problemWords []ProblemWord
 		{"immigrant", "This term is often used in clickbait articles, is this article trying to rile you up or scare you?"},
 		{"sex", "This term is often used in clickbait articles, is this article trying to rile you up or scare you?"},
 		{"studies show", "What studies? Does this article give a source?"},
-		{"fact", "Facts are sometimes claimed when there are none. Is there a source?"},
+		{"fact", "False articles often make appeals to 'facts', even when they are untrue. Is there a source?"},
 		{"addicted", "This is a very charged term. Is the article fair and unbaised?"},
 		{"lied", "This is a very charged term. Is the article fair and unbaised?"},
 		{"liar", "This is a very charged term. Is the article fair and unbaised?"},
 		{"millenial", "This term is often used in clickbait articles, is this article trying to rile you up or scare you?"},
+		{"under-25", "This term is often used in clickbait articles, is this article trying to rile you up or scare you?"},
+		{"working-class", "This is a very charged term. Is the article fair and unbaised?"},
+		{"middle-class", "This is a very charged term. Is the article fair and unbaised?"},
+		{"upper-class", "This is a very charged term. Is the article fair and unbaised?"},
 	}
 
 	//Response Prep
@@ -94,7 +98,8 @@ func grabWebpage(url string) (numberOfParagraphs int, problemWords []ProblemWord
 		document.Find("p").Each(func(index int, element *goquery.Selection) {
 			numberOfParagraphs++
 			text := element.Text()
-			if strings.Contains(text, dictionaryItem.word){
+			textUpper, wordUpper := strings.ToUpper(text), strings.ToUpper(dictionaryItem.word)
+			if strings.Contains(textUpper, wordUpper){
 				indexes = append(indexes, index)
 			}
 		})
@@ -129,26 +134,15 @@ func AnalyseWebpage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Print Locally
-	fmt.Printf("Website: %v \n", requestMessage)
-
 	//Send to Webpage Handling Function
 	numberOfParagraphs, problemWords := grabWebpage(requestMessage.Url)
 	
-
-	fmt.Printf("Words: \n %v \n", problemWords)
 	//Create Response Map
 	res := Response{
 		numberOfParagraphs,
 		requestMessage.Url,
 		problemWords,
 	}
-
-	fmt.Printf("Res: \n %v \n", res)
-	// res["numberOfParagraphs"] = 
-	// res["url"] = requestMessage.Url
-
-	// res["problemWords"] = problemWords	
 	
 	//Package Up Response
 	output, err := json.Marshal(res)
